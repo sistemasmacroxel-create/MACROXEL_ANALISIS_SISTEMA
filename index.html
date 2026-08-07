@@ -266,5 +266,85 @@ function boot(){active='expiry';document.querySelectorAll('.tab').forEach(b=>b.c
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
+
+<style id="mx-logo-connection-info-v100-style">
+#mxEcosystemLiveId,#liveId.footer-id,.footer-id,#mxConnectionDiagnostic{display:none!important}
+.mx-logo-info-trigger{cursor:pointer!important;touch-action:manipulation;outline:none}
+.mx-logo-info-trigger:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.35)!important;border-radius:10px}
+#mxLogoInfoOverlay{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,22,43,.72);backdrop-filter:blur(5px);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#mxLogoInfoOverlay.mx-show{display:flex}
+#mxLogoInfoCard{width:min(620px,100%);max-height:min(88vh,760px);overflow:auto;background:#fff;border:1px solid #d8e3f0;border-radius:20px;box-shadow:0 28px 70px rgba(2,18,40,.34);color:#102a43}
+.mx-li-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:linear-gradient(135deg,#08365f,#0f6fa4);color:#fff;border-radius:19px 19px 0 0}
+.mx-li-head h2{margin:0;font-size:18px;line-height:1.2}.mx-li-head small{display:block;margin-top:3px;font-size:11px;opacity:.85}.mx-li-close{width:36px;height:36px;border:0;border-radius:11px;background:rgba(255,255,255,.17);color:#fff;font-size:22px;font-weight:900;cursor:pointer}
+.mx-li-body{padding:16px 18px 19px}.mx-li-section{margin:0 0 14px}.mx-li-section:last-child{margin-bottom:0}.mx-li-title{margin:0 0 8px;font-size:11px;font-weight:950;letter-spacing:.05em;text-transform:uppercase;color:#4b6b88}
+.mx-li-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mx-li-row{min-width:0;padding:10px 11px;border:1px solid #dbe7f2;border-radius:12px;background:#f8fbfe}.mx-li-row.mx-wide{grid-column:1/-1}.mx-li-row span{display:block;margin-bottom:3px;font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#647b91}.mx-li-row b{display:block;font-size:12px;line-height:1.35;color:#102f4c;overflow-wrap:anywhere;word-break:break-word}.mx-li-state{display:inline-flex!important;width:auto!important;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#dcfce7;color:#166534!important}.mx-li-state.mx-off{background:#fee2e2;color:#991b1b!important}.mx-li-foot{margin-top:11px;padding:8px 10px;border-radius:10px;background:#eff6ff;color:#315776;font-size:10px;line-height:1.4}
+@media(max-width:540px){#mxLogoInfoOverlay{padding:9px;align-items:flex-end}#mxLogoInfoCard{max-height:90vh;border-radius:18px 18px 10px 10px}.mx-li-head{padding:13px 14px;border-radius:17px 17px 0 0}.mx-li-head h2{font-size:16px}.mx-li-body{padding:13px 14px 16px}.mx-li-grid{grid-template-columns:1fr}.mx-li-row.mx-wide{grid-column:auto}.mx-li-row{padding:9px 10px}.mx-li-row b{font-size:11px}}
+</style>
+<script id="mx-logo-connection-info-v100">
+(function(){
+'use strict';
+if(window.__mxLogoConnectionInfoV100)return;window.__mxLogoConnectionInfoV100=true;
+const txt=v=>String(v==null?'':v).trim();
+const cleanUrl=v=>txt(v).replace(/\/+$/,'');
+const safeJson=v=>{try{return JSON.parse(v)}catch(_e){return null}};
+const first=(...a)=>a.map(txt).find(Boolean)||'';
+function allStorage(){const out=[];try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i),raw=localStorage.getItem(key),parsed=safeJson(raw);out.push({key,raw,parsed});}}catch(_e){}return out;}
+function walk(value,out,depth=0){if(!value||typeof value!=='object'||depth>4)return;out.push(value);if(Array.isArray(value)){value.slice(0,30).forEach(v=>walk(v,out,depth+1));return;}Object.values(value).slice(0,60).forEach(v=>walk(v,out,depth+1));}
+function isFirebaseUrl(v){return /^https?:\/\/[^\s]+(?:firebaseio\.com|firebasedatabase\.app)(?:\/.*)?$/i.test(cleanUrl(v));}
+function connection(){
+ const candidates=[];
+ try{if(typeof window.mxViewerGetCfg==='function')candidates.push(window.mxViewerGetCfg());}catch(_e){}
+ try{if(window.config&&typeof window.config==='object')candidates.push(window.config);}catch(_e){}
+ for(const x of allStorage()){
+   if(x.parsed&&(/connection|cfg|config|firebase|visor/i.test(x.key)))candidates.push(x.parsed);
+   if(isFirebaseUrl(x.raw))candidates.push({db:x.raw});
+ }
+ const inputs=[document.getElementById('dbUrlInput'),document.getElementById('setDb'),document.getElementById('mxVaDb')].filter(Boolean);
+ if(inputs.length)candidates.push({db:inputs.map(x=>x.value).find(isFirebaseUrl)||''});
+ const branches=[document.getElementById('branchInput'),document.getElementById('setBranch'),document.getElementById('mxVaBranch'),document.getElementById('viewerBranch')].filter(Boolean);
+ if(branches.length)candidates.push({branch:branches.map(x=>x.value||x.textContent).map(txt).find(Boolean)||''});
+ let url='',principal='',updatedBy='';
+ const idPriority=[];
+ for(const c0 of candidates){const objs=[];walk(c0,objs);for(const c of objs){
+   if(!url){for(const k of ['firebaseUrl','currentUrl','db','url','databaseUrl','firebase','baseUrl']){if(isFirebaseUrl(c?.[k])){url=cleanUrl(c[k]);break;}}}
+   for(const k of ['principalDeviceId','mainDeviceId','primaryDeviceId','activationId','unitId','storeId','branch','sucursal','_mxBranch']){const v=txt(c?.[k]);if(v)idPriority.push({v,score:/principal|main|primary/i.test(k)?10:/activationId|unitId|storeId/.test(k)?8:5});}
+   if(!updatedBy)updatedBy=first(c?.updatedBy,c?.publishedBy,c?.usuario,c?.user);
+ }}
+ idPriority.sort((a,b)=>b.score-a.score);principal=idPriority.find(x=>x.v&&!/^(HGAM|DEFAULT|LATEST)$/i.test(x.v))?.v||idPriority[0]?.v||'';
+ if(!url){const body=txt(document.body?.innerText);const m=body.match(/https?:\/\/[^\s·]+(?:firebaseio\.com|firebasedatabase\.app)/i);if(m)url=cleanUrl(m[0]);}
+ return{url,principal,updatedBy};
+}
+function deviceId(){
+ const direct=[];
+ for(const fn of ['mxViewerDeviceId','deviceId','getDeviceId']){try{if(typeof window[fn]==='function')direct.push(window[fn]());}catch(_e){}}
+ for(const id of ['mxVaDevice','deviceIdBox','deviceBox','activationDevice','viewerDevice']){const el=document.getElementById(id);if(el)direct.push(el.value||el.textContent);}
+ for(const x of allStorage()){
+   if(/device/i.test(x.key)&&!/(connection|principal|main)/i.test(x.key))direct.push(x.raw);
+   if(x.parsed){const objs=[];walk(x.parsed,objs);for(const o of objs)direct.push(o?._mxDeviceId,o?.deviceId,o?.deviceKey,o?._device);}
+ }
+ const values=direct.map(txt).filter(v=>v&&v.length>=8&&!/^\[object Object\]$/.test(v));
+ return values.find(v=>/^MACROXEL[-_]/i.test(v))||values[0]||'';
+}
+function localActivation(currentDevice){
+ const all=[];for(const x of allStorage()){if(x.parsed)walk(x.parsed,all);}
+ let best=null,bestScore=-1;
+ for(const o of all){if(!o||typeof o!=='object')continue;const name=first(o.fullName,o.nombreCompleto,o.name,o.nombre,o.customer,o.client),phone=first(o.phone,o.telefono,o.mobile),email=first(o.email,o.correo);if(!name&&!phone&&!email)continue;let score=0;if(name)score+=3;if(phone)score+=2;if(email)score+=2;if(o.appCode||o.appName||o.application)score+=3;if(o.active===true)score+=4;if(/active|activa|activo|vigente/i.test(txt(o.status||o.estado)))score+=3;if(currentDevice&&[o.deviceId,o._mxDeviceId,o.deviceKey,o._device].map(txt).includes(currentDevice))score+=8;if(score>bestScore){bestScore=score;best=o;}}
+ const form={fullName:first(document.getElementById('actName')?.value,document.getElementById('mxVaName')?.value),phone:first(document.getElementById('actPhone')?.value,document.getElementById('mxVaPhone')?.value),email:first(document.getElementById('actEmail')?.value,document.getElementById('mxVaEmail')?.value)};
+ return{...(best||{}),fullName:first(best?.fullName,best?.nombreCompleto,best?.name,best?.nombre,form.fullName),phone:first(best?.phone,best?.telefono,form.phone),email:first(best?.email,best?.correo,form.email)};
+}
+function appName(){return first(document.querySelector('header h1')?.textContent,document.querySelector('.brand h1')?.textContent,document.querySelector('.brand b')?.textContent,document.title,'MACROXEL');}
+function ensureModal(){let ov=document.getElementById('mxLogoInfoOverlay');if(ov)return ov;ov=document.createElement('div');ov.id='mxLogoInfoOverlay';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Información de conexión del visor');ov.innerHTML='<div id="mxLogoInfoCard"><div class="mx-li-head"><div><h2>Información del visor</h2><small>Conexión, activación y dispositivo</small></div><button class="mx-li-close" type="button" aria-label="Cerrar">×</button></div><div class="mx-li-body"><section class="mx-li-section"><h3 class="mx-li-title">Conexión</h3><div class="mx-li-grid"><div class="mx-li-row"><span>Aplicación</span><b id="mxLiApp">—</b></div><div class="mx-li-row"><span>Estado</span><b id="mxLiState" class="mx-li-state">—</b></div><div class="mx-li-row mx-wide"><span>URL de Firebase conectada</span><b id="mxLiUrl">—</b></div><div class="mx-li-row"><span>ID del equipo principal</span><b id="mxLiPrincipal">—</b></div><div class="mx-li-row"><span>ID de este dispositivo</span><b id="mxLiDevice">—</b></div></div></section><section class="mx-li-section"><h3 class="mx-li-title">Datos registrados en la activación</h3><div class="mx-li-grid"><div class="mx-li-row mx-wide"><span>Nombre completo</span><b id="mxLiName">Consultando…</b></div><div class="mx-li-row"><span>Teléfono</span><b id="mxLiPhone">—</b></div><div class="mx-li-row"><span>Correo electrónico</span><b id="mxLiEmail">—</b></div></div></section><div class="mx-li-foot">Esta información es de consulta. La URL y el ID principal se sincronizan desde MACROXEL Hospitales.</div></div></div>';document.body.appendChild(ov);ov.querySelector('.mx-li-close').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close();});return ov;}
+function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=txt(v)||'No disponible';}
+function renderActivation(rec){setText('mxLiName',first(rec?.fullName,rec?.nombreCompleto,rec?.name,rec?.nombre));setText('mxLiPhone',first(rec?.phone,rec?.telefono));setText('mxLiEmail',first(rec?.email,rec?.correo));}
+async function remoteActivation(c,d){if(!c.url||!c.principal||!d)return null;const key=d.replace(/[.#$\[\]\/]/g,'_'),ids=[key,d].filter((v,i,a)=>v&&a.indexOf(v)===i);for(const id of ids){try{const u=c.url+'/viewer_licenses/'+encodeURIComponent(c.principal)+'/'+encodeURIComponent(id)+'.json?ts='+Date.now(),r=await fetch(u,{cache:'no-store'});if(r.ok){const data=await r.json();if(data)return data;}}catch(_e){}}return null;}
+async function open(){const ov=ensureModal(),c=connection(),d=deviceId(),local=localActivation(d),state=document.querySelector('.connected,.ok,#firebaseStatus.connected')||navigator.onLine;setText('mxLiApp',appName());const st=document.getElementById('mxLiState');if(st){st.textContent=(navigator.onLine&&c.url)?'● Conectado':'● Sin conexión';st.classList.toggle('mx-off',!(navigator.onLine&&c.url));}setText('mxLiUrl',c.url);setText('mxLiPrincipal',c.principal);setText('mxLiDevice',d);renderActivation(local);ov.classList.add('mx-show');document.body.style.overflow='hidden';const remote=await remoteActivation(c,d);if(remote&&ov.classList.contains('mx-show'))renderActivation({...local,...remote});}
+function close(){document.getElementById('mxLogoInfoOverlay')?.classList.remove('mx-show');document.body.style.overflow='';}
+function hideLegacy(){for(const el of document.querySelectorAll('#mxEcosystemLiveId,#liveId.footer-id,.footer-id,#mxConnectionDiagnostic'))el.style.setProperty('display','none','important');}
+function bindLogos(){const selectors=['#mxAdminLogo','header .brand img','header.top img.logo','.top .brand img','.head .brand img','.brand-head img','.topbar img.logo','.gate-brand img','#activationGate img','#mxViewerActivationGate img','.brand>img'];for(const el of document.querySelectorAll(selectors.join(','))){if(el.dataset.mxLogoInfo==='1')continue;el.dataset.mxLogoInfo='1';el.classList.add('mx-logo-info-trigger');el.setAttribute('title','Ver información de conexión y activación');if(!el.hasAttribute('tabindex'))el.tabIndex=0;el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});}}
+function boot(){hideLegacy();bindLogos();const mo=new MutationObserver(()=>{hideLegacy();bindLogos();});mo.observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('mx-viewer-config-changed',()=>setTimeout(()=>{hideLegacy();bindLogos();},50));document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
+
 </body>
 </html>
